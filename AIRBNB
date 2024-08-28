@@ -1,0 +1,465 @@
+
+
+!pip install pymongo
+!pip install dataprep
+     
+
+import pymongo
+import pandas as pd
+import dataprep.eda.create_report as report
+pd.set_option('display.max_columns', None)
+     
+
+gopi = pymongo.MongoClient("mongodb://gopiashokan:gopiroot@ac-0vdscni-shard-00-00.xdp3lkp.mongodb.net:27017,ac-0vdscni-shard-00-01.xdp3lkp.mongodb.net:27017,ac-0vdscni-shard-00-02.xdp3lkp.mongodb.net:27017/?ssl=true&replicaSet=atlas-11e4qv-shard-0&authSource=admin&retryWrites=true&w=majority")
+db = gopi['sample_airbnb']
+col = db['listingsAndReviews']
+     
+Primary Table
+
+
+data = []
+for i in col.find( {}, {'_id':1,'listing_url':1,'name':1,'property_type':1,'room_type':1,'bed_type':1,
+                        'minimum_nights':1,'maximum_nights':1,'cancellation_policy':1,'accommodates':1,
+                        'bedrooms':1,'beds':1,'number_of_reviews':1,'bathrooms':1,'price':1,
+                        'cleaning_fee':1,'extra_people':1,'guests_included':1,'images.picture_url':1,
+                        'review_scores.review_scores_rating':1} ):
+    data.append(i)
+
+df_1 = pd.DataFrame(data)
+df_1['images'] = df_1['images'].apply(lambda x: x['picture_url'])
+df_1['review_scores'] = df_1['review_scores'].apply(lambda x: x.get('review_scores_rating',0))
+df_1.head()
+     
+_id	listing_url	name	property_type	room_type	bed_type	minimum_nights	maximum_nights	cancellation_policy	accommodates	bedrooms	beds	number_of_reviews	bathrooms	price	cleaning_fee	extra_people	guests_included	images	review_scores
+0	1001265	https://www.airbnb.com/rooms/1001265	Ocean View Waikiki Marina w/prkg	Condominium	Entire home/apt	Real Bed	3	365	strict_14_with_grace_period	2	1.0	1.0	96	1.0	115.00	100.00	0.00	1	https://a0.muscache.com/im/pictures/15037101/5...	84
+1	10006546	https://www.airbnb.com/rooms/10006546	Ribeira Charming Duplex	House	Entire home/apt	Real Bed	2	30	moderate	8	3.0	5.0	51	1.0	80.00	35.00	15.00	6	https://a0.muscache.com/im/pictures/e83e702f-e...	89
+2	10030955	https://www.airbnb.com/rooms/10030955	Apt Linda Vista Lagoa - Rio	Apartment	Private room	Real Bed	1	1125	flexible	2	1.0	1.0	0	2.0	701.00	250.00	0.00	1	https://a0.muscache.com/im/pictures/59c516bd-c...	0
+3	10009999	https://www.airbnb.com/rooms/10009999	Horto flat with small garden	Apartment	Entire home/apt	Real Bed	2	1125	flexible	4	1.0	2.0	0	1.0	317.00	187.00	0.00	1	https://a0.muscache.com/im/pictures/5b408b9e-4...	0
+4	10059244	https://www.airbnb.com/rooms/10059244	Ligne verte - à 15 min de métro du centre ville.	Apartment	Entire home/apt	Real Bed	2	1125	moderate	2	0.0	1.0	0	1.0	43.00	NaN	12.00	1	https://a0.muscache.com/im/pictures/af5c069c-e...	0
+
+report(df_1)
+     
+
+df_1.isnull().sum()
+     
+_id                       0
+listing_url               0
+name                      0
+property_type             0
+room_type                 0
+bed_type                  0
+minimum_nights            0
+maximum_nights            0
+cancellation_policy       0
+accommodates              0
+bedrooms                  5
+beds                     13
+number_of_reviews         0
+bathrooms                10
+price                     0
+cleaning_fee           1531
+extra_people              0
+guests_included           0
+images                    0
+review_scores             0
+dtype: int64
+
+df_1['bedrooms'].fillna(0, inplace=True)
+df_1['beds'].fillna(0, inplace=True)
+df_1['bathrooms'].fillna(0, inplace=True)
+df_1['cleaning_fee'].fillna('Not Specified', inplace=True)
+df_1.isnull().sum()
+     
+_id                    0
+listing_url            0
+name                   0
+property_type          0
+room_type              0
+bed_type               0
+minimum_nights         0
+maximum_nights         0
+cancellation_policy    0
+accommodates           0
+bedrooms               0
+beds                   0
+number_of_reviews      0
+bathrooms              0
+price                  0
+cleaning_fee           0
+extra_people           0
+guests_included        0
+images                 0
+review_scores          0
+dtype: int64
+
+df_1.dtypes
+     
+_id                     object
+listing_url             object
+name                    object
+property_type           object
+room_type               object
+bed_type                object
+minimum_nights          object
+maximum_nights          object
+cancellation_policy     object
+accommodates             int64
+bedrooms               float64
+beds                   float64
+number_of_reviews        int64
+bathrooms               object
+price                   object
+cleaning_fee            object
+extra_people            object
+guests_included         object
+images                  object
+review_scores            int64
+dtype: object
+
+df_1['minimum_nights'] = df_1['minimum_nights'].astype(int)
+df_1['maximum_nights'] = df_1['maximum_nights'].astype(int)
+df_1['bedrooms'] = df_1['bedrooms'].astype(int)
+df_1['beds'] = df_1['beds'].astype(int)
+df_1['bathrooms'] = df_1['bathrooms'].astype(str).astype(float)
+df_1['price'] = df_1['price'].astype(str).astype(float).astype(int)
+df_1['cleaning_fee'] = df_1['cleaning_fee'].apply(lambda x: int(float(str(x))) if x != 'Not Specified' else 'Not Specified')
+df_1['extra_people'] = df_1['extra_people'].astype(str).astype(float).astype(int)
+df_1['guests_included'] = df_1['guests_included'].astype(str).astype(int)
+     
+
+df_1.dtypes
+     
+_id                     object
+listing_url             object
+name                    object
+property_type           object
+room_type               object
+bed_type                object
+minimum_nights           int64
+maximum_nights           int64
+cancellation_policy     object
+accommodates             int64
+bedrooms                 int64
+beds                     int64
+number_of_reviews        int64
+bathrooms              float64
+price                    int64
+cleaning_fee            object
+extra_people             int64
+guests_included          int64
+images                  object
+review_scores            int64
+dtype: object
+
+df_1.describe().T
+     
+count	mean	std	min	25%	50%	75%	max
+minimum_nights	5555.0	5.564356e+00	2.261386e+01	1.0	1.0	2.0	3.0	1.250000e+03
+maximum_nights	5555.0	1.382776e+06	5.256920e+07	1.0	59.0	1125.0	1125.0	2.147484e+09
+accommodates	5555.0	3.505851e+00	2.297019e+00	1.0	2.0	3.0	4.0	1.600000e+01
+bedrooms	5555.0	1.410441e+00	1.042334e+00	0.0	1.0	1.0	2.0	2.000000e+01
+beds	5555.0	2.066607e+00	1.620858e+00	0.0	1.0	2.0	3.0	2.500000e+01
+number_of_reviews	5555.0	2.760648e+01	4.979838e+01	0.0	1.0	5.0	32.0	5.330000e+02
+bathrooms	5555.0	1.288839e+00	7.037643e-01	0.0	1.0	1.0	1.0	1.600000e+01
+price	5555.0	2.787662e+02	8.422155e+02	9.0	70.0	129.0	280.0	4.884200e+04
+extra_people	5555.0	2.279190e+01	6.933151e+01	0.0	0.0	0.0	20.0	2.346000e+03
+guests_included	5555.0	1.747435e+00	1.487352e+00	1.0	1.0	1.0	2.0	1.600000e+01
+review_scores	5555.0	6.839568e+01	4.182983e+01	0.0	0.0	92.0	98.0	1.000000e+02
+
+df_1.head(2)
+     
+_id	listing_url	name	property_type	room_type	bed_type	minimum_nights	maximum_nights	cancellation_policy	accommodates	bedrooms	beds	number_of_reviews	bathrooms	price	cleaning_fee	extra_people	guests_included	images	review_scores
+0	10006546	https://www.airbnb.com/rooms/10006546	Ribeira Charming Duplex	House	Entire home/apt	Real Bed	2	30	moderate	8	3	5	51	1.0	80	35	15	6	https://a0.muscache.com/im/pictures/e83e702f-e...	89
+1	10009999	https://www.airbnb.com/rooms/10009999	Horto flat with small garden	Apartment	Entire home/apt	Real Bed	2	1125	flexible	4	1	2	0	1.0	317	187	0	1	https://a0.muscache.com/im/pictures/5b408b9e-4...	0
+Host
+
+
+host = []
+for i in col.find( {}, {'_id':1, 'host':1}):
+    host.append(i)
+
+df_host = pd.DataFrame(host)
+host_keys = list(df_host.iloc[0,1].keys())
+host_keys.remove('host_about')
+
+for i in host_keys:
+    if i == 'host_response_time':
+        df_host['host_response_time'] = df_host['host'].apply(lambda x: x['host_response_time'] if 'host_response_time' in x else 'Not Specified')
+    else:
+        df_host[i] = df_host['host'].apply(lambda x: x[i] if i in x and x[i]!='' else 'Not Specified')
+
+df_host.drop(columns=['host'], inplace=True)
+df_host.head()
+     
+_id	host_id	host_url	host_name	host_location	host_response_time	host_thumbnail_url	host_picture_url	host_neighbourhood	host_response_rate	host_is_superhost	host_has_profile_pic	host_identity_verified	host_listings_count	host_total_listings_count	host_verifications
+0	10006546	51399391	https://www.airbnb.com/users/show/51399391	Ana&Gonçalo	Porto, Porto District, Portugal	within an hour	https://a0.muscache.com/im/pictures/fab79f25-2...	https://a0.muscache.com/im/pictures/fab79f25-2...	Not Specified	100	False	True	True	3	3	[email, phone, reviews, jumio, offline_governm...
+1	10009999	1282196	https://www.airbnb.com/users/show/1282196	Ynaie	Rio de Janeiro, State of Rio de Janeiro, Brazil	Not Specified	https://a0.muscache.com/im/pictures/9681e3cc-4...	https://a0.muscache.com/im/pictures/9681e3cc-4...	Jardim Botânico	Not Specified	False	True	False	1	1	[email, phone, facebook]
+2	1001265	5448114	https://www.airbnb.com/users/show/5448114	David	Honolulu, Hawaii, United States	within an hour	https://a0.muscache.com/im/users/5448114/profi...	https://a0.muscache.com/im/users/5448114/profi...	Waikiki	98	False	True	False	18	18	[email, phone, reviews, kba]
+3	10021707	11275734	https://www.airbnb.com/users/show/11275734	Josh	New York, New York, United States	Not Specified	https://a0.muscache.com/im/users/11275734/prof...	https://a0.muscache.com/im/users/11275734/prof...	Bushwick	Not Specified	False	True	True	1	1	[email, phone, reviews, kba]
+4	10030955	51496939	https://www.airbnb.com/users/show/51496939	Livia	BR	Not Specified	https://a0.muscache.com/im/pictures/b7911710-9...	https://a0.muscache.com/im/pictures/b7911710-9...	Lagoa	Not Specified	False	True	False	1	1	[email, phone, jumio, government_id]
+
+df_host['host_is_superhost'] = df_host['host_is_superhost'].map({False:'No',True:'Yes'})
+df_host['host_has_profile_pic'] = df_host['host_has_profile_pic'].map({False:'No',True:'Yes'})
+df_host['host_identity_verified'] = df_host['host_identity_verified'].map({False:'No',True:'Yes'})
+df_host.head()
+     
+_id	host_id	host_url	host_name	host_location	host_response_time	host_thumbnail_url	host_picture_url	host_neighbourhood	host_response_rate	host_is_superhost	host_has_profile_pic	host_identity_verified	host_listings_count	host_total_listings_count	host_verifications
+0	10006546	51399391	https://www.airbnb.com/users/show/51399391	Ana&Gonçalo	Porto, Porto District, Portugal	within an hour	https://a0.muscache.com/im/pictures/fab79f25-2...	https://a0.muscache.com/im/pictures/fab79f25-2...	Not Specified	100	No	Yes	Yes	3	3	[email, phone, reviews, jumio, offline_governm...
+1	10009999	1282196	https://www.airbnb.com/users/show/1282196	Ynaie	Rio de Janeiro, State of Rio de Janeiro, Brazil	Not Specified	https://a0.muscache.com/im/pictures/9681e3cc-4...	https://a0.muscache.com/im/pictures/9681e3cc-4...	Jardim Botânico	Not Specified	No	Yes	No	1	1	[email, phone, facebook]
+2	1001265	5448114	https://www.airbnb.com/users/show/5448114	David	Honolulu, Hawaii, United States	within an hour	https://a0.muscache.com/im/users/5448114/profi...	https://a0.muscache.com/im/users/5448114/profi...	Waikiki	98	No	Yes	No	18	18	[email, phone, reviews, kba]
+3	10021707	11275734	https://www.airbnb.com/users/show/11275734	Josh	New York, New York, United States	Not Specified	https://a0.muscache.com/im/users/11275734/prof...	https://a0.muscache.com/im/users/11275734/prof...	Bushwick	Not Specified	No	Yes	Yes	1	1	[email, phone, reviews, kba]
+4	10030955	51496939	https://www.airbnb.com/users/show/51496939	Livia	BR	Not Specified	https://a0.muscache.com/im/pictures/b7911710-9...	https://a0.muscache.com/im/pictures/b7911710-9...	Lagoa	Not Specified	No	Yes	No	1	1	[email, phone, jumio, government_id]
+
+df_host.isnull().sum()
+     
+_id                          0
+host_id                      0
+host_url                     0
+host_name                    0
+host_location                0
+host_response_time           0
+host_thumbnail_url           0
+host_picture_url             0
+host_neighbourhood           0
+host_response_rate           0
+host_is_superhost            0
+host_has_profile_pic         0
+host_identity_verified       0
+host_listings_count          0
+host_total_listings_count    0
+host_verifications           0
+dtype: int64
+
+df_host.dtypes
+     
+_id                          object
+host_id                      object
+host_url                     object
+host_name                    object
+host_location                object
+host_response_time           object
+host_thumbnail_url           object
+host_picture_url             object
+host_neighbourhood           object
+host_response_rate           object
+host_is_superhost            object
+host_has_profile_pic         object
+host_identity_verified       object
+host_listings_count           int64
+host_total_listings_count     int64
+host_verifications           object
+dtype: object
+Address
+
+
+address = []
+for i in col.find( {}, {'_id':1, 'address':1}):
+    address.append(i)
+
+df_address = pd.DataFrame(address)
+address_keys = list(df_address.iloc[0,1].keys())
+
+for i in address_keys:
+    if i == 'location':
+        df_address['location_type'] = df_address['address'].apply(lambda x: x['location']['type'])
+        df_address['longitude'] = df_address['address'].apply(lambda x: x['location']['coordinates'][0])
+        df_address['latitude'] = df_address['address'].apply(lambda x: x['location']['coordinates'][1])
+        df_address['is_location_exact'] = df_address['address'].apply(lambda x: x['location']['is_location_exact'])
+    else:
+        df_address[i] = df_address['address'].apply(lambda x: x[i] if x[i]!='' else 'Not Specified')
+
+df_address.drop(columns=['address'], inplace=True)
+df_address.head()
+     
+_id	street	suburb	government_area	market	country	country_code	location_type	longitude	latitude	is_location_exact
+0	10006546	Porto, Porto, Portugal	Not Specified	Cedofeita, Ildefonso, Sé, Miragaia, Nicolau, V...	Porto	Portugal	PT	Point	-8.613080	41.141300	False
+1	10009999	Rio de Janeiro, Rio de Janeiro, Brazil	Jardim Botânico	Jardim Botânico	Rio De Janeiro	Brazil	BR	Point	-43.230750	-22.966254	True
+2	1001265	Honolulu, HI, United States	Oʻahu	Primary Urban Center	Oahu	United States	US	Point	-157.839190	21.286340	True
+3	10021707	Brooklyn, NY, United States	Brooklyn	Bushwick	New York	United States	US	Point	-73.936150	40.697910	True
+4	10030955	Rio de Janeiro, Rio de Janeiro, Brazil	Lagoa	Lagoa	Rio De Janeiro	Brazil	BR	Point	-43.205047	-22.971951	True
+
+df_address['is_location_exact'] = df_address['is_location_exact'].map({False:'No',True:'Yes'})
+df_address.head()
+     
+_id	street	suburb	government_area	market	country	country_code	location_type	longitude	latitude	is_location_exact
+0	10006546	Porto, Porto, Portugal	Not Specified	Cedofeita, Ildefonso, Sé, Miragaia, Nicolau, V...	Porto	Portugal	PT	Point	-8.613080	41.141300	No
+1	10009999	Rio de Janeiro, Rio de Janeiro, Brazil	Jardim Botânico	Jardim Botânico	Rio De Janeiro	Brazil	BR	Point	-43.230750	-22.966254	Yes
+2	1001265	Honolulu, HI, United States	Oʻahu	Primary Urban Center	Oahu	United States	US	Point	-157.839190	21.286340	Yes
+3	10021707	Brooklyn, NY, United States	Brooklyn	Bushwick	New York	United States	US	Point	-73.936150	40.697910	Yes
+4	10030955	Rio de Janeiro, Rio de Janeiro, Brazil	Lagoa	Lagoa	Rio De Janeiro	Brazil	BR	Point	-43.205047	-22.971951	Yes
+
+df_address.isnull().sum()
+     
+_id                  0
+street               0
+suburb               0
+government_area      0
+market               0
+country              0
+country_code         0
+location_type        0
+longitude            0
+latitude             0
+is_location_exact    0
+dtype: int64
+
+df_address.dtypes
+     
+_id                   object
+street                object
+suburb                object
+government_area       object
+market                object
+country               object
+country_code          object
+location_type         object
+longitude            float64
+latitude             float64
+is_location_exact     object
+dtype: object
+Availability
+
+
+availability = []
+for i in col.find( {}, {'_id':1, 'availability':1}):
+    availability.append(i)
+
+df_availability = pd.DataFrame(availability)
+availability_keys = list(df_availability.iloc[0,1].keys())
+
+for i in availability_keys:
+    df_availability['availability_30'] = df_availability['availability'].apply(lambda x: x['availability_30'])
+    df_availability['availability_60'] = df_availability['availability'].apply(lambda x: x['availability_60'])
+    df_availability['availability_90'] = df_availability['availability'].apply(lambda x: x['availability_90'])
+    df_availability['availability_365'] = df_availability['availability'].apply(lambda x: x['availability_365'])
+
+df_availability.drop(columns=['availability'], inplace=True)
+df_availability.head()
+     
+_id	availability_30	availability_60	availability_90	availability_365
+0	10006546	28	47	74	239
+1	10009999	0	0	0	0
+2	1001265	16	46	76	343
+3	10021707	0	0	0	0
+4	10030955	28	58	88	363
+
+df_availability.isnull().sum()
+     
+_id                 0
+availability_30     0
+availability_60     0
+availability_90     0
+availability_365    0
+dtype: int64
+
+df_availability.dtypes
+     
+_id                 object
+availability_30      int64
+availability_60      int64
+availability_90      int64
+availability_365     int64
+dtype: object
+Amenities
+
+
+def amenities_sort(x):
+    a = x
+    a.sort(reverse=False)
+    return a
+
+amenities = []
+for i in col.find( {}, {'_id':1, 'amenities':1}):
+    amenities.append(i)
+
+df_amenities = pd.DataFrame(amenities)
+df_amenities['amenities'] = df_amenities['amenities'].apply(lambda x: amenities_sort(x))
+df_amenities.head()
+     
+_id	amenities
+0	10006546	[Bed linens, Buzzer/wireless intercom, Cable T...
+1	10009999	[Buzzer/wireless intercom, Essentials, Family/...
+2	1001265	[Air conditioning, BBQ grill, Bed linens, Cabl...
+3	10021707	[Air conditioning, Buzzer/wireless intercom, C...
+4	10030955	[24-hour check-in, Air conditioning, Buzzer/wi...
+
+df_amenities.isnull().sum()
+     
+_id          0
+amenities    0
+dtype: int64
+
+df_amenities.dtypes
+     
+_id          object
+amenities    object
+dtype: object
+
+df = pd.merge(df_1, df_host, on='_id')
+df = pd.merge(df, df_address, on='_id')
+df = pd.merge(df, df_availability, on='_id')
+df = pd.merge(df, df_amenities, on='_id')
+df.head(3)
+     
+_id	listing_url	name	property_type	room_type	bed_type	minimum_nights	maximum_nights	cancellation_policy	accommodates	bedrooms	beds	number_of_reviews	bathrooms	price	cleaning_fee	extra_people	guests_included	images	review_scores	host_id	host_url	host_name	host_location	host_response_time	host_thumbnail_url	host_picture_url	host_neighbourhood	host_response_rate	host_is_superhost	host_has_profile_pic	host_identity_verified	host_listings_count	host_total_listings_count	host_verifications	street	suburb	government_area	market	country	country_code	location_type	longitude	latitude	is_location_exact	availability_30	availability_60	availability_90	availability_365	amenities
+0	10006546	https://www.airbnb.com/rooms/10006546	Ribeira Charming Duplex	House	Entire home/apt	Real Bed	2	30	moderate	8	3	5	51	1.0	80	35	15	6	https://a0.muscache.com/im/pictures/e83e702f-e...	89	51399391	https://www.airbnb.com/users/show/51399391	Ana&Gonçalo	Porto, Porto District, Portugal	within an hour	https://a0.muscache.com/im/pictures/fab79f25-2...	https://a0.muscache.com/im/pictures/fab79f25-2...	Not Specified	100	No	Yes	Yes	3	3	[email, phone, reviews, jumio, offline_governm...	Porto, Porto, Portugal	Not Specified	Cedofeita, Ildefonso, Sé, Miragaia, Nicolau, V...	Porto	Portugal	PT	Point	-8.61308	41.141300	No	28	47	74	239	[Bed linens, Buzzer/wireless intercom, Cable T...
+1	10009999	https://www.airbnb.com/rooms/10009999	Horto flat with small garden	Apartment	Entire home/apt	Real Bed	2	1125	flexible	4	1	2	0	1.0	317	187	0	1	https://a0.muscache.com/im/pictures/5b408b9e-4...	0	1282196	https://www.airbnb.com/users/show/1282196	Ynaie	Rio de Janeiro, State of Rio de Janeiro, Brazil	Not Specified	https://a0.muscache.com/im/pictures/9681e3cc-4...	https://a0.muscache.com/im/pictures/9681e3cc-4...	Jardim Botânico	Not Specified	No	Yes	No	1	1	[email, phone, facebook]	Rio de Janeiro, Rio de Janeiro, Brazil	Jardim Botânico	Jardim Botânico	Rio De Janeiro	Brazil	BR	Point	-43.23075	-22.966254	Yes	0	0	0	0	[Buzzer/wireless intercom, Essentials, Family/...
+2	1001265	https://www.airbnb.com/rooms/1001265	Ocean View Waikiki Marina w/prkg	Condominium	Entire home/apt	Real Bed	3	365	strict_14_with_grace_period	2	1	1	96	1.0	115	100	0	1	https://a0.muscache.com/im/pictures/15037101/5...	84	5448114	https://www.airbnb.com/users/show/5448114	David	Honolulu, Hawaii, United States	within an hour	https://a0.muscache.com/im/users/5448114/profi...	https://a0.muscache.com/im/users/5448114/profi...	Waikiki	98	No	Yes	No	18	18	[email, phone, reviews, kba]	Honolulu, HI, United States	Oʻahu	Primary Urban Center	Oahu	United States	US	Point	-157.83919	21.286340	Yes	16	46	76	343	[Air conditioning, BBQ grill, Bed linens, Cabl...
+
+# download as csv
+# df.to_csv('airbnb.csv', index=False)
+     
+
+df.dtypes
+     
+_id                           object
+listing_url                   object
+name                          object
+property_type                 object
+room_type                     object
+bed_type                      object
+minimum_nights                 int64
+maximum_nights                 int64
+cancellation_policy           object
+accommodates                   int64
+bedrooms                       int64
+beds                           int64
+number_of_reviews              int64
+bathrooms                    float64
+price                          int64
+cleaning_fee                  object
+extra_people                   int64
+guests_included                int64
+images                        object
+review_scores                  int64
+host_id                       object
+host_url                      object
+host_name                     object
+host_location                 object
+host_response_time            object
+host_thumbnail_url            object
+host_picture_url              object
+host_neighbourhood            object
+host_response_rate            object
+host_is_superhost             object
+host_has_profile_pic          object
+host_identity_verified        object
+host_listings_count            int64
+host_total_listings_count      int64
+host_verifications            object
+street                        object
+suburb                        object
+government_area               object
+market                        object
+country                       object
+country_code                  object
+location_type                 object
+longitude                    float64
+latitude                     float64
+is_location_exact             object
+availability_30                int64
+availability_60                int64
+availability_90                int64
+availability_365               int64
+amenities                     object
+dtype: object
